@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>صلاح أبو محمد BRANDING</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0d1117; color: #fff; }
+        .glow-text { text-shadow: 0 0 15px rgba(234, 179, 8, 0.6); }
+        .card-3d { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .card-3d:hover { transform: translateY(-8px) rotateX(4deg); box-shadow: 0 12px 25px rgba(234, 179, 8, 0.2); }
+        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; opacity: 0.5; }
+    </style>
+</head>
+<body class="relative min-h-screen pb-20">
+
+    <!-- Hero Section 3D -->
+    <header class="relative h-[60vh] flex flex-col justify-center items-center text-center overflow-hidden border-b border-gray-800">
+        <div id="canvas-container"></div>
+        <div class="relative z-10 p-6 bg-black/40 backdrop-blur-md rounded-2xl border border-yellow-500/30 max-w-2xl">
+            <h1 class="text-4xl md:text-6xl font-extrabold mb-3">
+                <span class="text-white">صلاح أبو محمد</span> 
+                <span class="text-yellow-400 glow-text uppercase font-mono tracking-widest ml-2">BRANDING</span>
+            </h1>
+            <p class="text-gray-300 text-lg md:text-xl">أرقى خامات الملابس العصرية والتشكيلات الحصرية</p>
+            <a href="#store" class="mt-6 inline-block bg-yellow-500 hover:bg-yellow-400 text-black font-bold px-8 py-3 rounded-full transition-all transform hover:scale-105 shadow-lg">
+                تصفح المنتجات 🛍️
+            </a>
+        </div>
+    </header>
+
+    <div id="store" class="container mx-auto px-4 py-12">
+        <!-- لوحة التحكم لإضافة منتج -->
+        <details class="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-12 shadow-2xl">
+            <summary class="cursor-pointer text-xl font-bold text-yellow-400 flex items-center gap-2">
+                <i class="fas fa-plus-circle"></i> لوحة التحكم: إضافة منتج جديد
+            </summary>
+            <form id="addProductForm" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                <input type="text" id="pName" placeholder="اسم المنتج (مثال: تيشرت أوفر سايز)" required class="bg-gray-800 border border-gray-700 p-3 rounded-lg text-white focus:outline-none focus:border-yellow-400">
+                <input type="number" id="pPrice" placeholder="السعر بالجنيه" required class="bg-gray-800 border border-gray-700 p-3 rounded-lg text-white focus:outline-none focus:border-yellow-400">
+                <input type="text" id="pCategory" placeholder="القسم (مثال: تيشرتات، بناطيل)" class="bg-gray-800 border border-gray-700 p-3 rounded-lg text-white focus:outline-none focus:border-yellow-400">
+                <input type="url" id="pImage" placeholder="رابط صورة المنتج الحقيقية (URL)" class="bg-gray-800 border border-gray-700 p-3 rounded-lg text-white focus:outline-none focus:border-yellow-400">
+                <button type="submit" class="md:col-span-2 bg-green-600 hover:bg-green-500 text-white font-bold p-3 rounded-lg transition-all">
+                    حفظ ونشر المنتج 🚀
+                </button>
+            </form>
+        </details>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- قائمة المنتجات -->
+            <div class="lg:col-span-2">
+                <h2 class="text-2xl font-bold mb-6 text-yellow-400 border-r-4 border-yellow-400 pr-3">قائمة المنتجات المتاحة</h2>
+                <div id="productsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-6"></div>
+            </div>
+
+            <!-- سلة المشتريات -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 h-fit sticky top-6 shadow-2xl">
+                <h2 class="text-2xl font-bold mb-4 text-yellow-400 flex items-center gap-2">
+                    <i class="fas fa-shopping-cart"></i> سلة المشتريات
+                </h2>
+                <div id="cartItems" class="space-y-4 max-h-80 overflow-y-auto mb-4 border-b border-gray-800 pb-4">
+                    <p class="text-gray-500 text-center py-6">السلة فارغة حالياً</p>
+                </div>
+                <div class="flex justify-between items-center text-xl font-bold mb-6">
+                    <span>الإجمالي:</span>
+                    <span id="cartTotal" class="text-yellow-400">0 ج.م</span>
+                </div>
+                <button onclick="checkoutWhatsApp()" class="w-full bg-green-500 hover:bg-green-400 text-black font-extrabold py-4 rounded-xl flex items-center justify-center gap-2 text-lg shadow-lg transition-all">
+                    <i class="fab fa-whatsapp text-2xl"></i> إتمام الطلب عبر الواتساب
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Three.js 3D Background
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        container.appendChild(renderer.domElement);
+
+        const geometry = new THREE.TorusKnotGeometry(10, 3, 100, 16);
+        const material = new THREE.MeshBasicMaterial({ color: 0xeab308, wireframe: true });
+        const torusKnot = new THREE.Mesh(geometry, material);
+        scene.add(torusKnot);
+        camera.position.z = 30;
+
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+            torusKnot.rotation.x += 0.01;
+            torusKnot.rotation.y += 0.01;
+            renderer.render(scene, camera);
+        }
+        animate3D();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Store Logic
+        let cart = [];
+        const WHATSAPP_NUMBER = "201004448497";
+
+        async function loadProducts() {
+            const res = await fetch('/api/products');
+            const products = await res.json();
+            const grid = document.getElementById('productsGrid');
+            grid.innerHTML = products.map(p => `
+                <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden card-3d flex flex-col justify-between">
+                    <img src="${p.image}" alt="${p.name}" class="w-full h-56 object-cover">
+                    <div class="p-4 flex-grow flex flex-col justify-between">
+                        <div>
+                            <span class="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded">${p.category}</span>
+                            <h3 class="text-lg font-bold mt-2">${p.name}</h3>
+                        </div>
+                        <div class="flex justify-between items-center mt-4">
+                            <span class="text-xl font-extrabold text-yellow-400">${p.price} ج.م</span>
+                            <button onclick="addToCart('${p.name}', ${p.price})" class="bg-yellow-500 hover:bg-yellow-400 text-black font-bold px-4 py-2 rounded-lg transition-all">
+                                + السلة
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addToCart(name, price) {
+            cart.push({ name, price });
+            updateCartUI();
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            const cartContainer = document.getElementById('cartItems');
+            const totalEl = document.getElementById('cartTotal');
+            if(cart.length === 0) {
+                cartContainer.innerHTML = `<p class="text-gray-500 text-center py-6">السلة فارغة حالياً</p>`;
+                totalEl.innerText = "0 ج.م";
+                return;
+            }
+
+            let total = 0;
+            cartContainer.innerHTML = cart.map((item, idx) => {
+                total += item.price;
+                return `
+                    <div class="flex justify-between items-center bg-gray-800 p-3 rounded-lg border border-gray-700">
+                        <div>
+                            <p class="font-bold text-sm">${item.name}</p>
+                            <p class="text-yellow-400 text-xs">${item.price} ج.م</p>
+                        </div>
+                        <button onclick="removeFromCart(${idx})" class="text-red-400 hover:text-red-300 text-sm">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+            totalEl.innerText = `${total} ج.م`;
+        }
+
+        document.getElementById('addProductForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newProduct = {
+                name: document.getElementById('pName').value,
+                price: document.getElementById('pPrice').value,
+                category: document.getElementById('pCategory').value,
+                image: document.getElementById('pImage').value
+            };
+            const res = await fetch('/api/products', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newProduct)
+            });
+            if(res.ok) {
+                alert('تم إضافة المنتج بنجاح!');
+                e.target.reset();
+                loadProducts();
+            }
+        });
+
+        function checkoutWhatsApp() {
+            if(cart.length === 0) {
+                alert('سلة المشتريات فارغة!');
+                return;
+            }
+            let total = cart.reduce((sum, item) => sum + item.price, 0);
+            let message = `مرحباً، أود إتمام طلب جديد من متجر *صلاح أبو محمد BRANDING*:%0A%0A`;
+            cart.forEach((item, index) => {
+                message += `${index + 1}. *${item.name}* - السعر: ${item.price} ج.م%0A`;
+            });
+            message += `%0A*الإجمالي النهائي:* ${total} ج.م%0A%0Aيرجى تأكيد الطلب وتحديد طريقة الشحن.`;
+
+            window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, '_blank');
+        }
+
+        loadProducts();
+    </script>
+</body>
+</html>
